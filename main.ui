@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>867</width>
+    <width>896</width>
     <height>652</height>
    </rect>
   </property>
@@ -24,7 +24,7 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <property name="font">
@@ -162,6 +162,7 @@
              </property>
              <property name="font">
               <font>
+               <family>Among Us</family>
                <pointsize>14</pointsize>
               </font>
              </property>
@@ -172,6 +173,7 @@
              </property>
              <property name="font">
               <font>
+               <family>Among Us</family>
                <pointsize>14</pointsize>
               </font>
              </property>
@@ -191,7 +193,7 @@
              <widget class="QLabel" name="label_5">
               <property name="font">
                <font>
-                <pointsize>14</pointsize>
+                <pointsize>12</pointsize>
                </font>
               </property>
               <property name="text">
@@ -225,13 +227,24 @@
             </item>
             <item>
              <widget class="QLabel" name="label_6">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
               <property name="text">
                <string>Predefined WordList :</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="wordlist_combobox"/>
+             <widget class="QComboBox" name="wordlist_combobox">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="add_from_wordlist_btn">
@@ -272,7 +285,7 @@
              <widget class="QLabel" name="label_8">
               <property name="font">
                <font>
-                <pointsize>14</pointsize>
+                <pointsize>12</pointsize>
                </font>
               </property>
               <property name="text">
@@ -290,7 +303,7 @@
               </property>
               <property name="font">
                <font>
-                <pointsize>14</pointsize>
+                <pointsize>12</pointsize>
                </font>
               </property>
               <property name="minimum">
@@ -305,7 +318,7 @@
              <widget class="QLabel" name="label_9">
               <property name="font">
                <font>
-                <pointsize>14</pointsize>
+                <pointsize>12</pointsize>
                </font>
               </property>
               <property name="text">
@@ -323,7 +336,7 @@
               </property>
               <property name="font">
                <font>
-                <pointsize>14</pointsize>
+                <pointsize>12</pointsize>
                </font>
               </property>
               <property name="minimum">
@@ -341,7 +354,7 @@
              <widget class="QLabel" name="label_10">
               <property name="font">
                <font>
-                <pointsize>14</pointsize>
+                <pointsize>12</pointsize>
                </font>
               </property>
               <property name="text">
@@ -359,7 +372,7 @@
               </property>
               <property name="font">
                <font>
-                <pointsize>14</pointsize>
+                <pointsize>12</pointsize>
                </font>
               </property>
               <property name="minimum">

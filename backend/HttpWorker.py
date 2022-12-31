@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 import time
 from typing import List
 
@@ -6,6 +7,24 @@ from requests import Session, PreparedRequest
 
 from backend.RequestParser import RequestParser
 from models.ResponseCallback import ResponseCallback
+
+
+class HttpWorker:
+    def __init__(self, http_request: str, request_payloads: List[tuple[str]], callback: ResponseCallback):
+        self.http_request = http_request
+        self.request_payloads = request_payloads
+        self.callback = callback
+        self.tasks = []
+
+    async def run(self):
+        req_queue = [make_request(self.http_request, payload) for payload in self.request_payloads]
+        self.tasks = [asyncio.ensure_future(send(req, make_callback(i, self.callback))) for i, req in
+                      enumerate(req_queue)]
+        return await asyncio.gather(*self.tasks)
+
+    def cancel(self):
+        for task in self.tasks:
+            task.cancel()
 
 
 async def send(req: PreparedRequest, callback):
@@ -19,12 +38,6 @@ def normal_send(req: PreparedRequest, callback):
     resp = s.send(req, allow_redirects=False)
     delta = (time.time_ns() - start) // pow(10, 6)
     callback(resp, delta)
-
-
-async def brute(http_request: str, request_payloads: List[tuple[str]], callback: ResponseCallback):
-    req_queue = [make_request(http_request, payload) for payload in request_payloads]
-    return await asyncio.gather(
-        *[send(req, make_callback(i, callback)) for i, req in enumerate(req_queue)])
 
 
 def make_callback(i, cb: ResponseCallback):

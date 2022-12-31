@@ -5,9 +5,9 @@ from typing import List
 import requests
 from PyQt6 import uic
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QDialog, QTableWidgetItem, QHeaderView
+from PyQt6.QtWidgets import QDialog, QTableWidgetItem, QHeaderView, QProgressBar, QPushButton
 
-from backend.brute import brute
+from backend.HttpWorker import HttpWorker
 from dialogs.response_detail import ResponseDetail
 from models.AttackConfig import AttackConfig
 from models.StoredResponse import StoredResponse
@@ -19,6 +19,7 @@ class AttackResults(QDialog):
     num_done = 0
     responses: List[StoredResponse | None]
     num_variables = 0
+    worker: HttpWorker | None = None
 
     def __init__(self, request_payloads: List[tuple[str]], http_request: str, config: AttackConfig):
         super(AttackResults, self).__init__()
@@ -32,6 +33,7 @@ class AttackResults(QDialog):
         self.progress.connect(self.ui.progress_bar.setValue)
         self.responses = [None for _ in range(self.num_reqs)]
         self.table_widget = self.ui.attack_results_table
+        self.ui.stop_btn.clicked.connect(lambda x: self.cancel())
         self.setup_table()
         self.show()
 
@@ -81,7 +83,21 @@ class AttackResults(QDialog):
 
     def start(self):
         loop = asyncio.get_event_loop()
-        asyncio.ensure_future(
-            brute(self.http_request, self.request_payloads,
-                  lambda i, res, timing: self.handle_request_complete(i, res, timing)),
-            loop=loop)
+        worker = HttpWorker(self.http_request, self.request_payloads,
+                            lambda i, res, timing: self.handle_request_complete(i, res, timing))
+        self.worker = worker
+        asyncio.ensure_future(worker.run(), loop=loop)
+
+    def cancel(self):
+        try:
+            self.worker.cancel()
+            self.table_widget.setSortingEnabled(True)
+            for i, response in enumerate(self.responses):
+                if response is None:
+                    self.table_widget.setItem(i, self.num_variables + 1, QTableWidgetItem("Cancelled"))
+            pb: QProgressBar = self.ui.progress_bar
+            pb.setDisabled(True)
+            stop_btn: QPushButton = self.ui.stop_btn
+            stop_btn.setDisabled(True)
+        except Exception as e:
+            print(e)
