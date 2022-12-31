@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import itertools
 from typing import List
 
 from PyQt6 import uic
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeyEvent
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QHeaderView, QTableWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QHeaderView, QTableWidget, QLabel, QMessageBox
 from qasync import QEventLoop
 
 from dialogs.attack_results import AttackResults
@@ -22,6 +23,7 @@ class PenetratorWindow(QMainWindow):
     payload_sets: List[List[str]] = []
     table_widget: QTableWidget
     selected_row: None
+    num_requests: int
 
     def __init__(self):
         super(PenetratorWindow, self).__init__()
@@ -29,6 +31,7 @@ class PenetratorWindow(QMainWindow):
         self.ui.launch_attack_btn.clicked.connect(self.launch_attack)
         self.table_widget = self.ui.payload_table_widget
         self.table_widget.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        self.table_widget.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.table_widget.keyPressEvent = lambda event: self.handle_payload_set_delete(event)
         self.table_widget.cellPressed.connect(lambda row, col: self.handle_table_click(row, col))
         PayloadFromFile(self)
@@ -46,6 +49,7 @@ class PenetratorWindow(QMainWindow):
                 self.payload_sets.pop(self.selected_row)
                 self.selected_row = None
                 self.update_variable_numbers()
+                self.update_num_reqs()
         return QTableWidget.keyPressEvent(self.table_widget, event)
 
     def update_variable_numbers(self):
@@ -55,7 +59,11 @@ class PenetratorWindow(QMainWindow):
     def launch_attack(self):
         try:
             text = self.ui.http_request_input.toPlainText()
-            attack_config = AttackConfig(True, True, True)
+            attack_config = AttackConfig(False, True, True)
+            if self.num_requests > 1000:
+                QMessageBox.information(self, "Too many requests",
+                                        "As the number of requests exceeds 1000, response bodies will be discarded")
+                attack_config.store_raw_response = False
             attack = AttackResults(list(itertools.product(*self.payload_sets)), text, attack_config)
             attack.start()
             attack.exec()
@@ -71,6 +79,14 @@ class PenetratorWindow(QMainWindow):
         table_widget.setItem(row_pos, 0, QTableWidgetItem(f"FUZZ{row_pos}"))
         table_widget.setItem(row_pos, 1, QTableWidgetItem(source))
         table_widget.setItem(row_pos, 2, make_int_item(len(payload_set)))
+        self.update_num_reqs()
+
+    def update_num_reqs(self):
+        self.num_requests = 0 if len(self.payload_sets) == 0 else \
+            functools.reduce(lambda a, b: a * b, [len(x) for x in self.payload_sets], 1)
+        num_reqs_label: QLabel = self.ui.num_requests_label
+        num_reqs_label.setText(f"{self.num_requests} Requests")
+        self.ui.launch_attack_btn.setDisabled(self.num_requests == 0)
 
 
 if __name__ == '__main__':
