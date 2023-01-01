@@ -1,5 +1,4 @@
 import asyncio
-import functools
 from typing import List
 
 import requests
@@ -8,6 +7,7 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QDialog, QTableWidgetItem, QHeaderView, QProgressBar, QPushButton
 
 from backend.HttpWorker import HttpWorker
+from backend.querying.Filterer import Filterer
 from dialogs.response_detail import ResponseDetail
 from models.AttackConfig import AttackConfig
 from models.StoredResponse import StoredResponse
@@ -34,6 +34,7 @@ class AttackResults(QDialog):
         self.responses = [None for _ in range(self.num_reqs)]
         self.table_widget = self.ui.attack_results_table
         self.ui.stop_btn.clicked.connect(lambda x: self.cancel())
+        self.filterer = Filterer(config)
         self.setup_table()
         self.show()
 
@@ -43,36 +44,44 @@ class AttackResults(QDialog):
             self.table_widget.setColumnCount(self.table_widget.columnCount())
         self.table_widget.setHorizontalHeaderLabels(
             ["Num"] + [f"FUZZ{n}" for n in range(self.num_variables)] + self.config.table_headers())
-        for pl in self.request_payloads:
-            self.add_row(pl)
         for i in range(4 + self.num_variables):
             self.ui.attack_results_table.horizontalHeader() \
                 .setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
         self.table_widget.cellDoubleClicked.connect(
             lambda row, col: self.show_response(int(self.table_widget.item(row, 0).text())))
 
-    def add_row(self, payload):
-        table_widget = self.table_widget
-        row_pos = table_widget.rowCount()
-        table_widget.insertRow(row_pos)
-        table_widget.setRowCount(table_widget.rowCount())
-        table_widget.setItem(row_pos, 0, make_int_item(row_pos))
+    def add_row(self, index: int, resp: StoredResponse):
+        table = self.table_widget
+        row_pos = table.rowCount()
+        table.insertRow(row_pos)
+        table.setRowCount(table.rowCount())
+        table.setItem(row_pos, 0, make_int_item(index))
+        # Display payload info
         for i in range(self.num_variables):
-            table_widget.setItem(row_pos, i + 1, QTableWidgetItem(payload[i]))
+            table.setItem(row_pos, i + 1, QTableWidgetItem(self.request_payloads[index][i]))
+
+        # Display response info
+        table.setItem(row_pos, self.num_variables + 1, make_int_item(resp.status_code))
+        if self.config.store_timing:
+            table.setItem(row_pos, self.num_variables + 2, make_int_item(resp.timing_ms))
+        if self.config.store_content_length:
+            table.setItem(row_pos, self.num_variables + 3, make_int_item(resp.content_length))
 
     def handle_request_complete(self, index: int, response: requests.Response, timing_ms: int):
-        resp = StoredResponse.from_py_response(response, timing_ms, self.config)
-        self.table_widget.setItem(index, self.num_variables + 1, make_int_item(resp.status_code))
-        if self.config.store_timing:
-            self.table_widget.setItem(index, self.num_variables + 2, make_int_item(timing_ms))
-        if self.config.store_content_length:
-            self.table_widget.setItem(index, self.num_variables + 3, make_int_item(resp.content_length))
-        self.responses[index] = resp
         # Definitely no race condition here
         self.num_done += 1
         self.progress.emit(self.num_done)
-        if self.num_reqs == self.num_done:
-            self.table_widget.setSortingEnabled(True)
+
+        resp = StoredResponse.from_py_response(response, timing_ms, self.config)
+
+        if self.filterer.store_response_fn(resp):
+            self.responses[index] = resp
+            self.add_row(index, resp)
+
+        if self.filterer.terminate_attack_fn(resp):
+            print("Cancel")
+            self.cancel()
+            self.cancel()
 
     def show_response(self, index):
         resp = self.responses[index]
@@ -91,10 +100,6 @@ class AttackResults(QDialog):
     def cancel(self):
         try:
             self.worker.cancel()
-            self.table_widget.setSortingEnabled(True)
-            for i, response in enumerate(self.responses):
-                if response is None:
-                    self.table_widget.setItem(i, self.num_variables + 1, QTableWidgetItem("Cancelled"))
             pb: QProgressBar = self.ui.progress_bar
             pb.setDisabled(True)
             stop_btn: QPushButton = self.ui.stop_btn

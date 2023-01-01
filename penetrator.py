@@ -11,6 +11,7 @@ from PyQt6.QtGui import QKeyEvent
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QHeaderView, QTableWidget, QLabel, QMessageBox
 from qasync import QEventLoop
 
+from dialogs.attack_config_dialog import AttackConfigDialog
 from dialogs.attack_results import AttackResults
 from models.AttackConfig import AttackConfig
 from payload_loaders.PayloadFromFile import PayloadFromFile
@@ -24,11 +25,14 @@ class PenetratorWindow(QMainWindow):
     table_widget: QTableWidget
     selected_row: None
     num_requests: int
+    config: AttackConfig
 
     def __init__(self):
         super(PenetratorWindow, self).__init__()
+        self.config = AttackConfig()
         self.ui = uic.loadUi('main.ui', self)
         self.ui.launch_attack_btn.clicked.connect(self.launch_attack)
+        self.ui.configure_attack_btn.clicked.connect(self.configure_attack)
         self.table_widget = self.ui.payload_table_widget
         self.table_widget.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.table_widget.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
@@ -59,12 +63,11 @@ class PenetratorWindow(QMainWindow):
     def launch_attack(self):
         try:
             text = self.ui.http_request_input.toPlainText()
-            attack_config = AttackConfig(False, True, True)
-            if self.num_requests > 1000:
+            if self.num_requests > 1000 and self.config.store_raw_response:
                 QMessageBox.information(self, "Too many requests",
                                         "As the number of requests exceeds 1000, response bodies will be discarded")
-                attack_config.store_raw_response = False
-            attack = AttackResults(list(itertools.product(*self.payload_sets)), text, attack_config)
+                self.config.store_raw_response = False
+            attack = AttackResults(list(itertools.product(*self.payload_sets)), text, self.config)
             attack.start()
             attack.exec()
         except Exception as e:
@@ -87,6 +90,13 @@ class PenetratorWindow(QMainWindow):
         num_reqs_label: QLabel = self.ui.num_requests_label
         num_reqs_label.setText(f"{self.num_requests} Requests")
         self.ui.launch_attack_btn.setDisabled(self.num_requests == 0)
+
+    def configure_attack(self):
+        dialog = AttackConfigDialog(self.config, lambda config: self.configure_attack_callback(config))
+        dialog.exec()
+
+    def configure_attack_callback(self, config: AttackConfig):
+        self.config = config
 
 
 if __name__ == '__main__':

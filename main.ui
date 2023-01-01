@@ -24,7 +24,7 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <property name="font">
@@ -95,6 +95,40 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="2" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QPushButton" name="configure_attack_btn">
+            <property name="text">
+             <string>Configure Attack</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item alignment="Qt::AlignBottom">
+           <widget class="QPushButton" name="launch_attack_btn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>LAUNCH ATTACK!</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item row="0" column="0">
          <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -441,47 +475,6 @@
              </widget>
             </item>
            </layout>
-          </item>
-          <item>
-           <widget class="Line" name="line_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="add_from_paste">
-            <property name="text">
-             <string>From Clipboard</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item row="2" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout_3">
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item alignment="Qt::AlignBottom">
-           <widget class="QPushButton" name="launch_attack_btn">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>LAUNCH ATTACK!</string>
-            </property>
-           </widget>
           </item>
          </layout>
         </item>
