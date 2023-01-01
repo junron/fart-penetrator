@@ -14,6 +14,7 @@ from qasync import QEventLoop
 from dialogs.attack_config_dialog import AttackConfigDialog
 from dialogs.attack_results import AttackResults
 from models.AttackConfig import AttackConfig
+from payload_loaders.PayloadFromClipboard import PayloadFromClipboard
 from payload_loaders.PayloadFromFile import PayloadFromFile
 from payload_loaders.PayloadFromIntRange import PayloadFromIntRange
 from payload_loaders.PayloadFromWordlist import PayloadFromWordlist
@@ -41,6 +42,7 @@ class PenetratorWindow(QMainWindow):
         PayloadFromFile(self)
         PayloadFromWordlist(self)
         PayloadFromIntRange(self)
+        PayloadFromClipboard(self)
         self.show()
 
     def handle_table_click(self, row, col):
@@ -88,7 +90,7 @@ class PenetratorWindow(QMainWindow):
         self.num_requests = 0 if len(self.payload_sets) == 0 else \
             functools.reduce(lambda a, b: a * b, [len(x) for x in self.payload_sets], 1)
         num_reqs_label: QLabel = self.ui.num_requests_label
-        num_reqs_label.setText(f"{self.num_requests} Requests")
+        num_reqs_label.setText(f"{self.num_requests} Request{'s'[self.num_requests ^ 1:]}")
         self.ui.launch_attack_btn.setDisabled(self.num_requests == 0)
 
     def configure_attack(self):
