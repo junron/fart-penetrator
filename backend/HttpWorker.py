@@ -1,9 +1,9 @@
 import asyncio
-import dataclasses
 import time
-from typing import List
+from typing import List, Callable, Any
 
 from requests import Session, PreparedRequest
+from backend.processors import *
 
 from backend.RequestParser import RequestParser
 from models.ResponseCallback import ResponseCallback
@@ -48,6 +48,12 @@ def make_callback(i, cb: ResponseCallback):
 
 
 def make_request(http_request: str, payload: tuple[str]):
+    assert b64e("hello") == 'aGVsbG8='
     for i, x in enumerate(payload):
         http_request = http_request.replace(f"FUZZ{i}", x)
+    lines = http_request.splitlines()
+    for i, line in enumerate(lines):
+        if "{" in line and "}" in line:
+            lines[i] = eval(f"f'{line}'")
+    http_request = "\n".join(lines)
     return RequestParser(http_request).to_request()
