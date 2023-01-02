@@ -1,10 +1,9 @@
 from __future__ import annotations
-import os
+
 import typing
 
-from PyQt6.QtWidgets import QComboBox, QSpinBox, QMessageBox, QCheckBox
+from PyQt6.QtWidgets import QSpinBox, QMessageBox, QCheckBox
 
-from payload_loaders.PayloadFromFile import load_payload_from_file
 from payload_loaders.PayloadLoader import PayloadLoader
 
 if typing.TYPE_CHECKING:

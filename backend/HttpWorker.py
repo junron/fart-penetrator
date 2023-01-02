@@ -1,11 +1,11 @@
 import asyncio
 import time
-from typing import List, Callable, Any
+from typing import List
 
 from requests import Session, PreparedRequest
-from backend.processors import *
 
 from backend.RequestParser import RequestParser
+from backend.processors import *
 from models.ResponseCallback import ResponseCallback
 
 
