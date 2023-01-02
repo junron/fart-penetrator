@@ -36,6 +36,7 @@ class HttpWorker:
         self.config = config
         self.callback = callback
         self.tasks = []
+        self.cancelled = False
 
     def terminate_if(self, predicate: Predicate) -> "HttpWorker":
         self.config.terminate_attack_fn = predicate
@@ -64,7 +65,25 @@ class HttpWorker:
             return None
         return results[0]
 
+    def min_by(self, func) -> FartResponse | None:
+        results = self.run_wait()
+        if len(results) == 0:
+            return None
+        prop = min(map(func, results))
+        return list(filter(lambda resp: func(resp) == prop, results))[0]
+
+    def max_by(self, func) -> FartResponse | None:
+        results = self.run_wait()
+        if len(results) == 0:
+            return None
+        prop = max(map(func, results))
+        return list(filter(lambda resp: func(resp) == prop, results))[0]
+
     def cancel(self, except_index: int = None):
+        if self.cancelled:
+            print("Warning: job double cancelled")
+            return
+        self.cancelled = True
         for i, task in enumerate(self.tasks):
             if i != except_index:
                 task.cancel()
@@ -89,5 +108,4 @@ class HttpWorker:
         # Criteria met for attack to be terminated
         if fart_resp is not None and self.config.terminate_attack_fn(fart_resp):
             self.cancel(index)
-            # TODO: inform caller that job is cancelled
         return fart_resp
