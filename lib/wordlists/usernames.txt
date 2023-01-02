@@ -78,7 +78,6 @@ apps
 appserver
 aq
 ar
-wiener
 archie
 arcsight
 argentina

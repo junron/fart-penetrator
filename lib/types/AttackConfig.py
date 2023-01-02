@@ -1,10 +1,23 @@
+import dataclasses
 import textwrap
 from typing import Callable
 
-from models.AttackConfig import AttackConfig
-from models.StoredResponse import StoredResponse
+from lib.types.FartResponse import FartResponse
 
-Predicate = Callable[[StoredResponse], bool]
+Predicate = Callable[[FartResponse], bool]
+
+
+@dataclasses.dataclass()
+class AttackConfig:
+    store_raw_response: bool = True
+    store_timing: bool = True
+    store_content_length: bool = True
+    terminate_attack_fn: Predicate = lambda resp: resp.status_code > 499
+    store_response_fn: Predicate = lambda resp: True
+
+    def table_headers(self):
+        return ["Status Code"] + (["Timing"] if self.store_timing else []) + (
+            ["Length"] if self.store_content_length else [])
 
 
 def make_predicate(condition: str, default: bool) -> Predicate:
@@ -20,6 +33,7 @@ def make_predicate(condition: str, default: bool) -> Predicate:
                     sc = stored_response.status_code
                     timing = stored_response.timing_ms
                     length = stored_response.content_length
+                    content_length = stored_response.content_length
                     text = r.text
                     content = r.content
                     return bool({condition})
@@ -27,14 +41,3 @@ def make_predicate(condition: str, default: bool) -> Predicate:
             )
             , out)
         return out["func"]
-
-
-class Filterer:
-    terminate_attack_fn: Predicate
-    store_response_fn: Predicate
-
-    def __init__(self, config: AttackConfig):
-        self.config = config
-        terminate_attack_if = config.terminate_attack_if
-        self.terminate_attack_fn = make_predicate(terminate_attack_if, False)
-        self.store_response_fn = make_predicate(config.store_response_if, True)
