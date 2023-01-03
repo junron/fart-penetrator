@@ -22,7 +22,7 @@ class HttpWorker:
 
     def __init__(self, reqs: FartRequest | List[FartRequest], session: requests.Session | None = None,
                  callback: ResponseCallback = None,
-                 config: AttackConfig = None):
+                 config: AttackConfig = None, show_progress=False):
         if type(reqs) is not list:
             self.reqs = [reqs]
         else:
@@ -39,6 +39,7 @@ class HttpWorker:
         self.callback = callback
         self.tasks = []
         self.cancelled = False
+        self.show_progress = show_progress
 
     def terminate_if(self, predicate: Predicate) -> "HttpWorker":
         self.config.terminate_attack_fn = predicate
@@ -51,7 +52,8 @@ class HttpWorker:
     async def run(self) -> List[FartResponse]:
         assert len(self.tasks) == 0, "Cannot call run on a worker with existing tasks"
         self.tasks = [asyncio.ensure_future(self.__send(req.to_request(), i)) for i, req in enumerate(self.reqs)]
-        self.tqdm = tqdm.cli.tqdm(total=len(self.tasks))
+        if self.show_progress:
+            self.tqdm = tqdm.cli.tqdm(total=len(self.tasks))
         finished, unfinished = await asyncio.wait(self.tasks)
         results = [task.result() for task in finished if not task.cancelled()]
         return list(filter(lambda x: x is not None, results))
@@ -100,7 +102,8 @@ class HttpWorker:
         resp = self.session.send(req, allow_redirects=False)
         delta = (time.time_ns() - start) // pow(10, 6)
         fart_resp = FartResponse.from_py_response(resp, delta, index, self.config)
-        self.tqdm.update()
+        if self.show_progress:
+            self.tqdm.update()
 
         # Criteria not met for response to be stored
         if not self.config.store_response_fn(fart_resp):
