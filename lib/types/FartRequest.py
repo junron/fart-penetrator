@@ -22,7 +22,10 @@ class FartRequest(object):
 
     def __init__(self, req_text: str, payloads: Iterable[str] | None = None):
         self.req_text = req_text.lstrip()
-        self.payloads = payloads
+        if payloads is None:
+            self.payloads = tuple()
+        else:
+            self.payloads = payloads
 
     def substitute(self, *args, **kwargs):
         return self.substitute_product(*args, **kwargs)
@@ -48,9 +51,12 @@ class FartRequest(object):
             lines = http_request.splitlines()
             for i, line in enumerate(lines):
                 if "{" in line and "}" in line:
-                    lines[i] = eval(f"f'{line}'")
+                    # Defer interpolation until state is replaced
+                    if "state" in line:
+                        continue
+                    lines[i] = eval(f'f"""{line}"""')
             http_request = "\n".join(lines)
-            out.append(FartRequest(http_request, payload))
+            out.append(FartRequest(http_request, self.payloads + payload))
         return out
 
     @staticmethod

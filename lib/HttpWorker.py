@@ -18,13 +18,13 @@ class HttpWorker:
     session: requests.Session
     store_raw_response: bool
     callback: ResponseCallback | None
-    terminate_attack_fn: Predicate | None
-    store_response_fn: Predicate | None
+    terminate_attack_fn: Predicate | None = None
+    store_response_fn: Predicate | None = None
     tasks: List[asyncio.Task]
     tqdm: tqdm.tqdm
 
     def __init__(self, reqs: FartRequest | List[FartRequest], session: requests.Session | None = None,
-                 callback: ResponseCallback = None,
+                 callback: ResponseCallback = None, concurrency: int = 0,
                  store_raw_response=True, show_progress=False):
         if type(reqs) is not list:
             self.reqs = [reqs]
@@ -40,6 +40,8 @@ class HttpWorker:
         self.tasks = []
         self.cancelled = False
         self.show_progress = show_progress
+        self.concurrency = concurrency
+        self.sem = asyncio.Semaphore(concurrency) if concurrency > 0 else None
 
     def terminate_if(self, predicate: Predicate) -> "HttpWorker":
         self.terminate_attack_fn = predicate
@@ -86,7 +88,7 @@ class HttpWorker:
 
     def cancel(self, except_index: int = None):
         if self.cancelled:
-            print("Warning: job double cancelled")
+            print("Warning: job double cancelled", except_index)
             return
         self.cancelled = True
         for i, task in enumerate(self.tasks):
@@ -95,6 +97,9 @@ class HttpWorker:
 
     async def __send(self, req: PreparedRequest, index: int):
         loop = asyncio.get_event_loop()
+        if self.sem is not None:
+            async with self.sem:
+                return await loop.run_in_executor(None, self.__blocking_send, req, index)
         return await loop.run_in_executor(None, self.__blocking_send, req, index)
 
     def __blocking_send(self, req: PreparedRequest, index: int):
@@ -107,13 +112,13 @@ class HttpWorker:
             self.tqdm.update()
 
         # Criteria not met for response to be stored
-        if not self.store_response_fn(fart_resp):
+        if self.store_response_fn is not None and not self.store_response_fn(fart_resp):
             fart_resp = None
 
         if self.callback is not None:
             self.callback(index, fart_resp)
 
         # Criteria met for attack to be terminated
-        if fart_resp is not None and self.terminate_attack_fn(fart_resp):
+        if fart_resp is not None and self.terminate_attack_fn is not None and self.terminate_attack_fn(fart_resp):
             self.cancel(index)
         return fart_resp

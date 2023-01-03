@@ -1,6 +1,7 @@
 import importlib.resources
 
 from lib.HttpWorker import *
+from lib.FartLooper import *
 from lib.types.FartRequest import *
 from lib.types.FartResponse import *
 from lib.types.ResponseCallback import *

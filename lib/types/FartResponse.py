@@ -1,4 +1,3 @@
-from __future__ import annotations
 import dataclasses
 
 import requests
@@ -13,8 +12,8 @@ class FartResponse:
     timing_ms: int | None
     content_length: int | None
     index: int | None
-    text: str | None
     payloads: typing.Iterable[str] | None
+    text: str | None
 
     @staticmethod
     def from_py_response(resp: requests.Response, timing_ms: int, index: int, payloads: typing.Iterable[str],
@@ -25,6 +24,6 @@ class FartResponse:
             timing_ms,
             len(resp.content),
             index,
+            payloads,
             resp.text if store_raw else None,
-            payloads
         )
