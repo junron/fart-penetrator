@@ -1,5 +1,5 @@
 import itertools
-from typing import List
+from typing import List, Iterable
 
 import requests
 import random
@@ -20,8 +20,9 @@ tme = time.time()
 class FartRequest(object):
     __banned_headers = [x.lower() for x in ["Content-Length"]]
 
-    def __init__(self, req_text: str):
+    def __init__(self, req_text: str, payloads: Iterable[str] | None = None):
         self.req_text = req_text.lstrip()
+        self.payloads = payloads
 
     def substitute(self, *args, **kwargs):
         return self.substitute_product(*args, **kwargs)
@@ -49,7 +50,7 @@ class FartRequest(object):
                 if "{" in line and "}" in line:
                     lines[i] = eval(f"f'{line}'")
             http_request = "\n".join(lines)
-            out.append(FartRequest(http_request))
+            out.append(FartRequest(http_request, payload))
         return out
 
     @staticmethod

@@ -5,9 +5,6 @@ import requests
 
 import typing
 
-if typing.TYPE_CHECKING:
-    from lib.types.AttackConfig import AttackConfig
-
 
 @dataclasses.dataclass()
 class FartResponse:
@@ -16,13 +13,18 @@ class FartResponse:
     timing_ms: int | None
     content_length: int | None
     index: int | None
+    text: str | None
+    payloads: typing.Iterable[str] | None
 
     @staticmethod
-    def from_py_response(resp: requests.Response, timing_ms: int, index: int, config: AttackConfig):
+    def from_py_response(resp: requests.Response, timing_ms: int, index: int, payloads: typing.Iterable[str],
+                         store_raw: bool = True):
         return FartResponse(
-            resp if config.store_raw_response else None,
+            resp if store_raw else None,
             resp.status_code,
-            timing_ms if config.store_timing else None,
-            len(resp.content) if config.store_content_length else None,
-            index
+            timing_ms,
+            len(resp.content),
+            index,
+            resp.text if store_raw else None,
+            payloads
         )

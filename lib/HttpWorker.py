@@ -1,28 +1,31 @@
 import asyncio
 import time
-from typing import List
+from typing import List, Callable
 
 import requests
 import tqdm.cli
 from requests import PreparedRequest
 
-from lib.types.AttackConfig import AttackConfig, Predicate
 from lib.types.FartRequest import FartRequest
 from lib.types.FartResponse import FartResponse
 from lib.types.ResponseCallback import ResponseCallback
+
+Predicate = Callable[[FartResponse], bool]
 
 
 class HttpWorker:
     reqs: List[FartRequest]
     session: requests.Session
-    config: AttackConfig
+    store_raw_response: bool
     callback: ResponseCallback | None
+    terminate_attack_fn: Predicate | None
+    store_response_fn: Predicate | None
     tasks: List[asyncio.Task]
     tqdm: tqdm.tqdm
 
     def __init__(self, reqs: FartRequest | List[FartRequest], session: requests.Session | None = None,
                  callback: ResponseCallback = None,
-                 config: AttackConfig = None, show_progress=False):
+                 store_raw_response=True, show_progress=False):
         if type(reqs) is not list:
             self.reqs = [reqs]
         else:
@@ -31,22 +34,19 @@ class HttpWorker:
         if session is None:
             session = requests.Session()
 
-        if config is None:
-            config = AttackConfig()
-
         self.session = session
-        self.config = config
+        self.store_raw_response = store_raw_response
         self.callback = callback
         self.tasks = []
         self.cancelled = False
         self.show_progress = show_progress
 
     def terminate_if(self, predicate: Predicate) -> "HttpWorker":
-        self.config.terminate_attack_fn = predicate
+        self.terminate_attack_fn = predicate
         return self
 
     def store_if(self, predicate: Predicate) -> "HttpWorker":
-        self.config.store_response_fn = predicate
+        self.store_response_fn = predicate
         return self
 
     async def run(self) -> List[FartResponse]:
@@ -101,18 +101,19 @@ class HttpWorker:
         start = time.time_ns()
         resp = self.session.send(req, allow_redirects=False)
         delta = (time.time_ns() - start) // pow(10, 6)
-        fart_resp = FartResponse.from_py_response(resp, delta, index, self.config)
+        fart_resp = FartResponse.from_py_response(resp, delta, index, self.reqs[index].payloads,
+                                                  self.store_raw_response)
         if self.show_progress:
             self.tqdm.update()
 
         # Criteria not met for response to be stored
-        if not self.config.store_response_fn(fart_resp):
+        if not self.store_response_fn(fart_resp):
             fart_resp = None
 
         if self.callback is not None:
             self.callback(index, fart_resp)
 
         # Criteria met for attack to be terminated
-        if fart_resp is not None and self.config.terminate_attack_fn(fart_resp):
+        if fart_resp is not None and self.terminate_attack_fn(fart_resp):
             self.cancel(index)
         return fart_resp
