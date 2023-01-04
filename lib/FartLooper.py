@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
 
 from lib import HttpWorker, Predicate
@@ -42,6 +43,8 @@ class FartLooper:
         assert self.updater is not None
         assert (self.worker_response_selector is not None or self.response_selector is not None)
         worker = self.worker
+        worker.dont_create_pool = True
+        pool = ThreadPoolExecutor(self.worker.concurrency if self.worker.concurrency > 0 else min(100, len(self.reqs)))
         while True:
             reqs = []
             for req in self.reqs:
@@ -50,6 +53,7 @@ class FartLooper:
             worker.cancelled = False
             worker.tasks = []
             worker.reqs = reqs
+            worker.pool = pool
             worker.sem = asyncio.Semaphore(worker.concurrency) if worker.concurrency > 0 else None
 
             if self.worker_response_selector is not None:
@@ -62,4 +66,5 @@ class FartLooper:
                 self.debugger(result)
             self.state = self.updater(result, self.state)
             print(self.state)
+        pool.shutdown()
         return self.state

