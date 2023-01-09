@@ -4,7 +4,7 @@ from typing import List, Iterable
 import requests
 import random
 import time
-from lib.processors import *
+from fartlib.processors import *
 
 CRLF = '\r\n'
 

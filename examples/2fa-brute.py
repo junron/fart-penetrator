@@ -1,6 +1,6 @@
 import time
 
-from lib import *
+from fartlib import *
 
 req = FartRequest("""
 POST /login2 HTTP/1.1

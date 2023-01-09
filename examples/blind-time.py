@@ -1,6 +1,6 @@
 import string
 
-from lib import *
+from fartlib import *
 
 req = FartRequest("""
 GET / HTTP/1.1

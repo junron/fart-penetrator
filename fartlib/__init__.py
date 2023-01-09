@@ -1,10 +1,10 @@
 import importlib.resources
 
-from lib.HttpWorker import *
-from lib.FartLooper import *
-from lib.types.FartRequest import *
-from lib.types.FartResponse import *
-from lib.types.ResponseCallback import *
+from fartlib.HttpWorker import *
+from fartlib.FartLooper import *
+from fartlib.types.FartRequest import *
+from fartlib.types.FartResponse import *
+from fartlib.types.ResponseCallback import *
 from . import wordlists
 
 usernames = importlib.resources.read_text(wordlists, "usernames.txt").splitlines()

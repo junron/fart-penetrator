@@ -1,4 +1,4 @@
-from lib import *
+from fartlib import *
 
 req = FartRequest("""
 POST /login HTTP/1.1

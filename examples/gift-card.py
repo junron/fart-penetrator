@@ -1,4 +1,4 @@
-from lib import *
+from fartlib import *
 
 add_giftcards = FartRequest("""
 POST /cart HTTP/1.1

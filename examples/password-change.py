@@ -1,4 +1,4 @@
-from lib import *
+from fartlib import *
 
 req = FartRequest("""
 POST /my-account/change-password HTTP/1.1

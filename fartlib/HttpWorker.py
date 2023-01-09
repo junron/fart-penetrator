@@ -7,9 +7,9 @@ import requests
 import tqdm.cli
 from requests import PreparedRequest
 
-from lib.types.FartRequest import FartRequest
-from lib.types.FartResponse import FartResponse
-from lib.types.ResponseCallback import ResponseCallback
+from fartlib.types.FartRequest import FartRequest
+from fartlib.types.FartResponse import FartResponse
+from fartlib.types.ResponseCallback import ResponseCallback
 
 Predicate = Callable[[FartResponse], bool]
 

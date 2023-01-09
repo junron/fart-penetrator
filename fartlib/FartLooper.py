@@ -2,8 +2,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
 
-from lib import HttpWorker, Predicate
-from lib.types.FartResponse import FartResponse
+from fartlib import HttpWorker, Predicate
+from fartlib.types.FartResponse import FartResponse
 
 StateUpdater = Callable[[FartResponse, Any], Any]
 WorkerResponseSelector = Callable[[HttpWorker], FartResponse | None]
