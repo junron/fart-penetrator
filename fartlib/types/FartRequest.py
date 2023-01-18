@@ -20,12 +20,14 @@ tme = time.time()
 class FartRequest(object):
     __banned_headers = [x.lower() for x in ["Content-Length"]]
 
-    def __init__(self, req_text: str, payloads: Iterable[str] | None = None):
+    def __init__(self, req_text: str, payloads: Iterable[str] | None = None, use_http: bool | None = None, use_eval = False):
         self.req_text = req_text.lstrip()
         if payloads is None:
             self.payloads = tuple()
         else:
             self.payloads = payloads
+        self.use_http_only = use_http
+        self.use_eval = use_eval
 
     def substitute(self, *args, **kwargs):
         return self.substitute_product(*args, **kwargs)
@@ -49,12 +51,13 @@ class FartRequest(object):
             for i, x in enumerate(payload):
                 http_request = http_request.replace(positions[i], x)
             lines = http_request.splitlines()
-            for i, line in enumerate(lines):
-                if "{" in line and "}" in line:
-                    # Defer interpolation until state is replaced
-                    if "state" in line:
-                        continue
-                    lines[i] = eval(f'f"""{line}"""')
+            if self.use_eval:
+                for i, line in enumerate(lines):
+                    if "{" in line and "}" in line:
+                        # Defer interpolation until state is replaced
+                        if "state" in line:
+                            continue
+                        lines[i] = eval(f'f"""{line}"""')
             http_request = "\n".join(lines)
             out.append(FartRequest(http_request, self.payloads + payload))
         return out
@@ -104,9 +107,20 @@ class FartRequest(object):
         data = [x.strip().encode("utf-8") for x in req_lines[ind:] if x.strip()] if ind < len(req_lines) else None
         headers["Content-Length"] = len(b"\r\n".join(data)) if data is not None else 0
         host = headers.get("Host")
-        https = headers.get("Origin", "").startswith("https://") or headers.get("Referer", "").startswith(
-            "https://")
-        url = f"http{'s' if https else ''}://{host}{url}"
+        scheme = "http://"
+        if self.use_http_only == True:
+            scheme = "http://"
+        elif self.use_http_only == False:
+            scheme = "https://"
+        elif self.use_http_only is None:
+            if headers.get("Origin", "").startswith("http://") or headers.get("Referer", "").startswith("http://"):
+                scheme = "http://"
+            elif "localhost" in host:
+                scheme = "http://"
+            else:
+                scheme = "https://"
+
+        url = f"{scheme}{host}{url}"
         req = requests.PreparedRequest()
         req.prepare(method, url)
         req.method = method

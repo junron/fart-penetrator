@@ -27,7 +27,7 @@ class HttpWorker:
 
     def __init__(self, reqs: FartRequest | List[FartRequest], session: requests.Session | None = None,
                  callback: ResponseCallback = None, concurrency: int = 0,
-                 store_raw_response=True, show_progress=False, dont_create_pool = False):
+                 store_raw_response=True, show_progress=True, dont_create_pool=False):
         if type(reqs) is not list:
             self.reqs = [reqs]
         else:
