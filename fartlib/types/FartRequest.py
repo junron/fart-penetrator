@@ -104,7 +104,7 @@ class FartRequest(object):
             ind += 1
             req_line = req_lines[ind]
         ind += 1
-        data = [x.strip().encode("utf-8") for x in req_lines[ind:] if x.strip()] if ind < len(req_lines) else None
+        data = [x.encode("utf-8") for x in req_lines[ind:]] if ind < len(req_lines) else None
         headers["Content-Length"] = len(b"\r\n".join(data)) if data is not None else 0
         host = headers.get("Host")
         scheme = "http://"
@@ -126,5 +126,5 @@ class FartRequest(object):
         req.method = method
         req.url = url
         req.headers = headers
-        req.body = data
+        req.body = CRLF.encode().join(data)
         return req
